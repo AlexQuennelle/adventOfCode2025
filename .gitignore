@@ -1,0 +1,6 @@
+[Bb]uild/
+[Bb]uild.web/
+[Bb]uild.win/
+[Bb]in/
+.cache/
+.idea/
