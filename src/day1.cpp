@@ -1,6 +1,78 @@
+#include <fstream>
 #include <iostream>
+#include <ostream>
+#include <ranges>
+#include <string>
+#include <vector>
+
+constexpr int DialSize = 100;
+
+class Dial
+{
+	public:
+	auto GetCount() const -> int { return this->count; }
+
+	void operator+=(const int num)
+	{
+		this->dialPos = (this->dialPos + num + DialSize) % DialSize;
+		count = dialPos == 0 ? count + 1 : count;
+	}
+	friend auto operator<<(std::ostream& os, const Dial dial) -> std::ostream&
+	{
+		os << dial.dialPos;
+		return os;
+	}
+
+	private:
+	int dialPos{50};
+	int count{0};
+};
+
+auto ReadFile(const std::string& filepath) -> std::vector<std::string>
+{
+	std::vector<std::string> data(0);
+
+	std::ifstream input{filepath};
+	if (input.is_open())
+	{
+		std::string value;
+		while (input >> value)
+		{
+			data.push_back(value);
+		}
+	}
+	else
+	{
+		std::cerr << "ERROR: Unable to open file at " << filepath << '\n';
+	}
+	return data;
+}
 
 auto main() -> int
 {
-	std::cout << "Hello, World!\n";
+	namespace r = std::ranges;
+	namespace rv = std::ranges::views;
+
+	auto data = ReadFile(RESOURCES_PATH "input_day1.txt");
+
+	auto splitData = [](auto val) -> std::pair<char, int>
+	{
+		return {val[0], std::stoi(rv::drop(val, 1) | r::to<std::string>())};
+	};
+	auto convertData = [](auto pair) -> int
+	{
+		auto [sign, num] = pair;
+		if (sign == 'L')
+			num = num * -1;
+		return num;
+	};
+	auto turns = data | rv::transform(splitData) | rv::transform(convertData);
+
+	Dial dial;
+	for (const auto turn : turns)
+	{
+		dial += turn;
+	}
+
+	std::cout << dial.GetCount() << '\n';
 }

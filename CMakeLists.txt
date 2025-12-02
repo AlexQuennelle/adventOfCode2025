@@ -69,9 +69,9 @@ target_include_directories("${CMAKE_PROJECT_NAME}"
 target_include_directories("${CMAKE_PROJECT_NAME}"
                            PUBLIC SYSTEM "${PROJECT_BINARY_DIR}")
 
-# add_custom_command(
-#   TARGET ${CMAKE_PROJECT_NAME}
-#   POST_BUILD
-#   COMMAND
-#     ${CMAKE_COMMAND} -E copy_directory "${CMAKE_CURRENT_SOURCE_DIR}/resources/"
-#     $<IF:$<CONFIG:Release>,"${RELEASE_RESOURCE_DIR}","${DEBUG_RESOURCE_DIR}">)
+add_custom_command(
+  TARGET ${CMAKE_PROJECT_NAME}
+  POST_BUILD
+  COMMAND
+    ${CMAKE_COMMAND} -E copy_directory "${CMAKE_CURRENT_SOURCE_DIR}/resources/"
+    $<IF:$<CONFIG:Release>,"${RELEASE_RESOURCE_DIR}","${DEBUG_RESOURCE_DIR}">)
