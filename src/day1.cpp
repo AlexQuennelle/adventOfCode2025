@@ -1,3 +1,5 @@
+#include <cmath>
+#include <cstdlib>
 #include <fstream>
 #include <iostream>
 #include <ostream>
@@ -10,12 +12,29 @@ constexpr int DialSize = 100;
 class Dial
 {
 	public:
-	auto GetCount() const -> int { return this->count; }
+	auto GetCountPart1() const -> int { return this->countPart1; }
+	auto GetCountPart2() const -> int { return this->countPart2; }
 
 	void operator+=(const int num)
 	{
-		this->dialPos = (this->dialPos + num + DialSize) % DialSize;
-		count = dialPos == 0 ? count + 1 : count;
+		int loop = std::abs(num) / DialSize;
+		if (num < 0)
+		{
+			int size = dialPos == 0 ? DialSize : dialPos;
+			if ((std::abs(num) % DialSize) >= size)
+				loop++;
+		}
+		else
+		{
+			if (num % DialSize >= (DialSize - dialPos))
+				loop++;
+		}
+
+		this->dialPos
+			= (((this->dialPos + num) % DialSize) + DialSize) % DialSize;
+
+		countPart1 = dialPos == 0 ? countPart1 + 1 : countPart1;
+		countPart2 += loop;
 	}
 	friend auto operator<<(std::ostream& os, const Dial dial) -> std::ostream&
 	{
@@ -25,7 +44,8 @@ class Dial
 
 	private:
 	int dialPos{50};
-	int count{0};
+	int countPart1{0};
+	int countPart2{0};
 };
 
 auto ReadFile(const std::string& filepath) -> std::vector<std::string>
@@ -73,6 +93,6 @@ auto main() -> int
 	{
 		dial += turn;
 	}
-
-	std::cout << dial.GetCount() << '\n';
+	std::cout <<"Part 1: "<< dial.GetCountPart1() << '\n';
+	std::cout <<"Part 2: "<< dial.GetCountPart2() << '\n';
 }
