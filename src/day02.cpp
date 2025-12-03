@@ -19,12 +19,8 @@ auto main() -> int
 			data += line;
 		}
 	}
-	// data = "11-22,95-115"
-	// 	   ",998-1012,1188511880-1188511890,222220-222224,1698522-"
-	// 	   "1698528,446443-446449,38593856-38593862,565653-565659, "
-	// 	   "824824821-824824827,2121212118-2121212124";
 
-	auto test3 = [](auto val) -> std::vector<int64_t>
+	auto processInput = [](auto val) -> std::vector<int64_t>
 	{
 		auto stringify = [](auto val) -> std::string
 		{
@@ -40,28 +36,39 @@ auto main() -> int
 	};
 	auto numbers = data
 				   | rv::split(',')
-				   | rv::transform(test3)
+				   | rv::transform(processInput)
 				   | rv::join
 				   | r::to<std::vector<int64_t>>();
 
-	int64_t accumulator = 0;
+	int64_t accumulator1 = 0;
+	int64_t accumulator2 = 0;
 	for (auto val : numbers | rv::pairwise | rv::stride(2))
 	{
 		auto range = rv::iota(std::get<0>(val), std::get<1>(val) + 1);
 		for (auto num : range)
 		{
 			std::string str = std::to_string(num);
-			if (str.length() % 2 != 0)
-				continue;
 
-			auto midpoint = str.length() / 2;
-			if (str.substr(0, midpoint) == str.substr(midpoint))
+			auto splits = rv::iota(2l, static_cast<int64_t>(str.length()) + 1)
+						  | rv::filter([len = str.length()](auto num) -> auto
+									   { return (len % num == 0); });
+			for (auto split : splits)
 			{
-				accumulator += num;
-				std::cout << str << '\n';
+				std::string val = str.substr(0, str.length() / split);
+				auto pattern
+					= rv::repeat(val, split) | rv::join | r::to<std::string>();
+				if (pattern == str)
+				{
+					if (split == 2)
+						accumulator1 += num;
+
+					accumulator2 += num;
+					break;
+				}
 			}
 		}
 	}
 	std::cout << '\n';
-	std::cout << "part 1: " << accumulator << '\n';
+	std::cout << "part 1: " << accumulator1 << '\n';
+	std::cout << "part 2: " << accumulator2 << '\n';
 }
