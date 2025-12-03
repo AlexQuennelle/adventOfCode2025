@@ -1,6 +1,5 @@
 #include <algorithm>
 #include <fstream>
-#include <functional>
 #include <iostream>
 #include <ranges>
 #include <string>
@@ -10,6 +9,7 @@ auto main() -> int
 {
 	namespace r = std::ranges;
 	namespace rv = std::ranges::views;
+#ifdef PART1
 
 	int accumulator = 0;
 	std::ifstream input{RESOURCES_PATH "input_day3.txt"};
@@ -48,4 +48,14 @@ auto main() -> int
 		}
 	}
 	std::cout << accumulator << '\n';
+#endif // PART1
+	// std::ifstream input{RESOURCES_PATH "input_day3.txt"};
+	std::ifstream input{RESOURCES_PATH "test3.txt"};
+	if (input.is_open())
+	{
+		std::string line;
+		while (input >> line)
+		{
+		}
+	}
 }
