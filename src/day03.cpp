@@ -1,61 +1,50 @@
 #include <algorithm>
+#include <cstdint>
 #include <fstream>
 #include <iostream>
 #include <ranges>
 #include <string>
-#include <vector>
+#include <string_view>
 
-auto main() -> int
+using std::string;
+using std::string_view;
+
+auto GetDigits(const string_view str, const uint64_t length) -> string
 {
 	namespace r = std::ranges;
 	namespace rv = std::ranges::views;
-#ifdef PART1
 
-	int accumulator = 0;
+	if (length <= 0)
+		return "";
+	if (str.length() <= length)
+		return string(str);
+
+	auto view = str.substr(0, str.length() - (length - 1));
+	auto zipped = rv::zip_transform([](auto a, auto b) -> auto
+									{ return std::pair<char, uint64_t>(a, b); },
+									view, rv::iota(0));
+	auto [digit, index]
+		= *r::max_element(zipped, {}, &std::pair<char, uint64_t>::first);
+	return string(1, digit).append(
+		GetDigits(str.substr(index + 1ul), length - 1ul));
+}
+
+auto main() -> int
+{
+	uint64_t part1{0};
+	uint64_t part2{0};
 	std::ifstream input{RESOURCES_PATH "input_day3.txt"};
-	// std::ifstream input{RESOURCES_PATH "test3.txt"};
 	if (input.is_open())
 	{
 		std::string line;
 		while (input >> line)
 		{
-			auto br = rv::zip(
-				line
-					| rv::transform([](auto num)
-									{ return std::string(1, num); })
-					| rv::transform([](auto num) { return std::stoi(num); })
-					| r::to<std::vector<int>>(),
-				rv::iota(0));
-			auto bank = br | r::to<std::vector<std::tuple<int, int>>>();
-			auto filterDecreasing = [](auto pair) -> bool
-			{
-				auto [fst, snd] = pair;
-				return std::get<1>(fst) < std::get<1>(snd);
-			};
-			auto pullOutVals = [](auto pair)
-			{
-				auto [fst, snd] = pair;
-				return std::to_string(std::get<0>(fst))
-					   + std::to_string(std::get<0>(snd));
-			};
-			auto test = rv::cartesian_product(bank, bank)
-						| rv::filter(filterDecreasing)
-						| rv::transform(pullOutVals)
-						| rv::transform([](auto num) { return std::stoi(num); })
-						| r::to<std::vector<int>>();
-			accumulator += *r::max_element(test, {});
-			std::cout << *r::max_element(test, {}) << '\n';
+			string str1 = GetDigits(line, 2);
+			part1 += std::stoull(str1);
+			string str2 = GetDigits(line, 12);
+			part2 += std::stoull(str2);
 		}
 	}
-	std::cout << accumulator << '\n';
-#endif // PART1
-	// std::ifstream input{RESOURCES_PATH "input_day3.txt"};
-	std::ifstream input{RESOURCES_PATH "test3.txt"};
-	if (input.is_open())
-	{
-		std::string line;
-		while (input >> line)
-		{
-		}
-	}
+	std::cout << "Part 1: " << part1 << '\n';
+	std::cout << "Part 2: " << part2 << '\n';
 }
