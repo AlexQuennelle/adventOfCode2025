@@ -20,14 +20,86 @@ struct op
 namespace r = std::ranges;
 namespace rv = std::ranges::views;
 
+class Column
+{
+	public:
+	auto Transpose() -> Column
+	{
+		vector<string> newData(this->width, string(height, ' '));
+		for (uint64_t i{0}; i < this->width; i++)
+		{
+			for (uint64_t j{0}; j < this->height; j++)
+			{
+				newData[i][j] = data[j][i];
+			}
+		}
+		return {.data = newData, .width = this->height, .height = this->width};
+	}
+	auto ToNums() -> vector<int64_t>
+	{
+		auto clean = [](string val) -> string
+		{
+			return val
+				   | rv::filter([](auto ch) { return ch != ' '; })
+				   | r::to<string>();
+		};
+		return this->data
+			   | rv::transform(clean)
+			   | rv::transform([](const auto& val) { return std::stoll(val); })
+			   | r::to<vector<int64_t>>();
+	}
+
+	vector<string> data;
+	uint64_t width{0};
+	uint64_t height{0};
+};
+
+auto GetColWidths(std::ifstream& input) -> vector<int64_t>
+{
+	vector<int> nums;
+	input.seekg(-1, input.end);
+	if (input.peek() == '\n')
+	{
+		input.seekg(-1, input.cur);
+		int64_t i = input.tellg();
+		int col = 0;
+		for (i; i > 0; i--)
+		{
+			int curr = input.peek();
+			if (curr == '\n')
+				break;
+			else if (curr != ' ')
+			{
+				nums.push_back(col);
+				col = 0;
+			}
+			else
+			{
+				col++;
+			}
+			input.seekg(i, input.beg);
+		}
+	}
+	input.seekg(0, input.beg);
+	return rv::reverse(nums) | r::to<vector<int64_t>>();
+}
+
 auto main() -> int
 {
 	vector<vector<int64_t>> lines;
 	vector<op> ops;
-	// std::ifstream input{RESOURCES_PATH "test6.txt"};
+	vector<int64_t> colWidths;
+	vector<Column> columns;
+
 	std::ifstream input{RESOURCES_PATH "input_day6.txt"};
 	if (input.is_open())
 	{
+		colWidths = GetColWidths(input);
+		columns = vector<Column>(colWidths.size());
+		for (uint64_t i{0}; i < columns.size(); i++)
+		{
+			columns[i].width = static_cast<uint64_t>(colWidths[i]);
+		}
 		string line;
 		while (std::getline(input, line))
 		{
@@ -47,53 +119,34 @@ auto main() -> int
 			}
 			else
 			{
-				auto chunkFun = [](auto a, auto b)
+				auto lineM = line;
+				for (auto& column : columns)
 				{
-					return std::isalnum(a) && std::isalnum(b);
-				};
-				auto cleanArr = [](auto val) -> string
-				{
-					return val
-						   | rv::filter([](auto a) { return a != ' '; })
-						   | r::to<string>();
-				};
-				auto toNum = [](auto val) -> int64_t
-				{
-					return std::stoll(val);
-				};
-				auto nums = line
-							| rv::chunk_by(chunkFun)
-							| rv::transform(cleanArr)
-							| rv::filter([](auto val) { return val != ""; })
-							| rv::transform(toNum)
-							| r::to<vector<int64_t>>();
-				lines.push_back(nums);
+					column.data.push_back(lineM.substr(0, column.width));
+					lineM.erase(0, column.width + 1);
+					column.height++;
+				}
 			}
 		}
 	}
-	uint64_t width = lines[0].size();
-	uint64_t height = lines.size();
-	vector<vector<int64_t>> cols(width, vector<int64_t>(height));
-	for (uint64_t i{0}; i < width; i++)
-	{
-		for (uint64_t j{0}; j < height; j++)
-		{
-			cols[i][j] = lines[j][i];
-		}
-	}
-
-	auto func = [](auto pair) -> int64_t
+	auto foldFunc = [](auto pair) -> int64_t
 	{
 		auto [nums, op] = pair;
-		for (auto num : nums)
-		{
-			std::cout << num << ' ';
-		}
-		std::cout << "= ";
-		std::cout << r::fold_left(nums, op.init, op.func) << '\n';
 		return r::fold_left(nums, op.init, op.func);
 	};
-	auto test = r::fold_left(rv::zip(cols, ops) | rv::transform(func), 0,
-							 std::plus<>());
-	std::cout << test << '\n';
+	auto part1Cols
+		= rv::zip(columns
+					  | rv::transform([](auto col) { return col.ToNums(); }),
+				  ops)
+		  | rv::transform(foldFunc);
+	auto part2Cols
+		= rv::zip(columns
+					  | rv::transform([](auto col) { return col.Transpose(); })
+					  | rv::transform([](auto col) { return col.ToNums(); }),
+				  ops)
+		  | rv::transform(foldFunc);
+	auto output1 = r::fold_left(part1Cols, 0, std::plus<>());
+	auto output2 = r::fold_left(part2Cols, 0, std::plus<>());
+	std::cout << "Part 1: " << output1 << '\n';
+	std::cout << "Part 2: " << output2 << '\n';
 }
