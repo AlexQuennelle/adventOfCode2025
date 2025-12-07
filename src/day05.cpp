@@ -1,6 +1,7 @@
 #include <algorithm>
 #include <cctype>
 #include <fstream>
+#include <functional>
 #include <iostream>
 #include <ranges>
 #include <string>
@@ -18,7 +19,6 @@ auto main() -> int
 	std::vector<int64_t> inventory;
 
 	std::ifstream input{RESOURCES_PATH "input_day5.txt"};
-	// std::ifstream input{RESOURCES_PATH "test5.txt"};
 	if (input.is_open())
 	{
 		bool swapProcessing{false};
@@ -45,60 +45,52 @@ auto main() -> int
 					  | rv::filter([](auto val) { return val != "-"; })
 					  | rv::transform([](auto val) { return std::stoll(val); })
 					  | r::to<std::vector<int64_t>>();
-				std::cout << range[0] << ' ' << range[1] << '\n';
 				ranges.emplace_back(range[0], range[1]);
 			}
 			else
 			{
 				inventory.push_back(std::stoll(line));
-				std::cout << line << '\n';
 			}
 		}
 	}
 	r::sort(ranges);
 	r::sort(inventory);
-	for (auto pair : ranges)
+	std::vector<std::pair<int64_t, int64_t>> freshIDs = ranges;
+	for (auto i = freshIDs.begin(); i < freshIDs.end(); i++)
 	{
-		std::cout << pair.first << "<->" << pair.second << '\n';
+		for (auto j = i + 1; j < freshIDs.end(); j++)
+		{
+			if (i->second >= j->first - 1)
+			{
+				i->second = std::max(i->second, j->second);
+				freshIDs.erase(j);
+				j--;
+			}
+			else
+			{
+				break;
+			}
+		}
 	}
-	std::cout << ranges.size() << '\n';
-	auto rangeOverlap = [](auto a, auto b) -> bool
-	{
-		return a.second >= b.first;
-	};
-	auto mergeRanges = [](auto val) -> std::pair<int64_t, int64_t>
-	{
-		return {
-			val.begin()->first,
-			std::max(val.begin()->second, val.back().second),
-		};
-	};
-	auto freshIDs = ranges
-				| rv::chunk_by(rangeOverlap)
-				| rv::transform(mergeRanges)
-				| r::to<std::vector<std::pair<int64_t, int64_t>>>();
-	for (auto pair : freshIDs)
-	{
-		std::cout << pair.first << "<->" << pair.second << '\n';
-	}
-	std::cout << freshIDs.size() << '\n';
-	std::cout << '\n';
 	int acc1{0};
 	for (auto id : inventory)
 	{
-		std::cout << id;
 		for (auto range : freshIDs)
 		{
 			if (id >= range.first && id <= range.second)
 			{
 
-				std::cout << ' ' << range.first << "<->" << range.second << "✓";
 				acc1++;
-				std::cout << acc1;
 				break;
 			}
 		}
-		std::cout << '\n';
 	}
 	std::cout << acc1 << '\n';
+	auto countRange = [](auto pair) -> int64_t
+	{
+		return (pair.second + 1) - pair.first;
+	};
+	int64_t acc2
+		= r::fold_left(freshIDs | rv::transform(countRange), 0, std::plus<>());
+	std::cout << acc2 << '\n';
 }
