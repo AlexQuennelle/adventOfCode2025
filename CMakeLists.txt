@@ -31,7 +31,7 @@ option(BUILD_SHARED_LIBS "Build shared libraries" OFF)
 
 message("Build type: ${CMAKE_BUILD_TYPE}")
 
-add_executable("${CMAKE_PROJECT_NAME}" src/day05.cpp)
+add_executable("${CMAKE_PROJECT_NAME}" src/day06.cpp)
 
 if(NOT WINDOWS)
   set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -fsanitize=undefined")
